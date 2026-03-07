@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Banking System</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+body{
+font-family: Arial;
+background:#bc2088;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+width:350px;
+}
+
+.card{
+background:rgb(255, 255, 255);
+padding:25px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+input{
+width:100%;
+padding:10px;
+margin:10px 0;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin:5px 0;
+border:none;
+background:#007bff;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+.link{
+color:#007bff;
+cursor:pointer;
+margin-top:10px;
+}
+
+.hidden{
+display:none;
+}
+
+.balance{
+font-size:25px;
+margin:15px 0;
+font-weight:bold;
+}
+
+.history{
+margin-top:15px;
+max-height:150px;
+overflow:auto;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:5px;
+font-size:13px;
+}
+
+.logout-btn{
+background:red;
+}
+
+.clear-btn{
+background:orange;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="card" id="loginCard">
+
+<h2>Mobile Banking Login</h2>
+
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p class="link" onclick="showRegister()">New User? Register</p>
+<p class="link" onclick="showForgot()">Forgot Password?</p>
+
+</div>
+
+
+<!-- REGISTER -->
+<div class="card hidden" id="registerCard">
+
+<h2>User Registration</h2>
+
+<input type="text" id="regUser" placeholder="Create Username">
+<input type="password" id="regPass" placeholder="Create Password">
+
+<button onclick="register()">Register</button>
+
+<p class="link" onclick="backToLogin()">Back to Login</p>
+
+</div>
+
+
+<!-- FORGOT PASSWORD -->
+<div class="card hidden" id="forgotCard">
+
+<h2>Reset Password</h2>
+
+<input type="text" id="forgotUser" placeholder="Enter Username">
+<input type="password" id="newPass" placeholder="New Password">
+
+<button onclick="resetPassword()">Reset Password</button>
+
+<p class="link" onclick="backToLogin()">Back to Login</p>
+
+</div>
+
+
+<!-- DASHBOARD -->
+<div class="card hidden" id="dashboard">
+
+<h2>Welcome <span id="userDisplay"></span></h2>
+
+<div class="balance">
+₹ <span id="balance">0</span>
+</div>
+
+<input type="number" id="amount" placeholder="Enter amount">
+
+<button onclick="deposit()">Deposit</button>
+<button onclick="withdraw()">Withdraw</button>
+
+<button onclick="clearHistory()" class="clear-btn">
+Clear Transaction History
+</button>
+
+<button class="logout-btn" onclick="logout()">Logout</button>
+
+<h3>Transaction History</h3>
+
+<div class="history">
+
+<table>
+
+<thead>
+<tr>
+<th>Type</th>
+<th>Amount</th>
+<th>Date & Time</th>
+</tr>
+</thead>
+
+<tbody id="history"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
