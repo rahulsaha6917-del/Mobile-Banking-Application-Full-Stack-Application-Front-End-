@@ -1,306 +1,257 @@
-let currentBalance = 0;
-let loggedUser = null;
-
+let currentUser = null;
 const API = "http://localhost:9093/api/bank";
 
-/* LOGIN */
-function login(){
 
-let username=document.getElementById("username").value.trim();
-let password=document.getElementById("password").value.trim();
-
-if(!username || !password){
-alert("Enter username and password");
-return;
+// SHOW REGISTER
+function showRegister(){
+document.getElementById("loginCard").classList.add("hidden");
+document.getElementById("registerCard").classList.remove("hidden");
 }
 
-fetch(API+"/login",{
 
+// SHOW FORGOT
+function showForgot(){
+document.getElementById("loginCard").classList.add("hidden");
+document.getElementById("forgotCard").classList.remove("hidden");
+}
+
+
+// BACK TO LOGIN
+function backToLogin(){
+document.getElementById("registerCard").classList.add("hidden");
+document.getElementById("forgotCard").classList.add("hidden");
+document.getElementById("loginCard").classList.remove("hidden");
+}
+
+
+// REGISTER
+function register(){
+
+let username = document.getElementById("regUser").value;
+let password = document.getElementById("regPass").value;
+
+fetch(API + "/register",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
 username:username,
 password:password
 })
-
 })
-.then(res=>{
-
-if(!res.ok){
-throw new Error();
-}
-
-return res.json();
-
-})
+.then(res=>res.text())
 .then(data=>{
-
-loggedUser=data;
-
-document.getElementById("loginCard").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
-
-document.getElementById("userDisplay").innerText=data.username;
-
-alert("Login Successful");
-
-})
-.catch(()=>{
-alert("Invalid Username or Password");
+alert(data);
+backToLogin();
 });
 
 }
 
 
-/* REGISTER */
-function register(){
+// LOGIN
+function login(){
 
-let username=document.getElementById("regUser").value.trim();
-let password=document.getElementById("regPass").value.trim();
+let username = document.getElementById("username").value;
+let password = document.getElementById("password").value;
 
-if(!username || !password){
-alert("Fill all fields");
-return;
-}
-
-fetch(API+"/register",{
-
+fetch(API + "/login",{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
 username:username,
 password:password
 })
-
 })
-.then(res=>res.text())
-.then(msg=>{
+.then(res=>res.json())
+.then(user=>{
 
-alert(msg);
+if(user && user.id){
 
-backToLogin();
+currentUser = user;
 
-})
-.catch(()=>alert("Registration failed"));
+document.getElementById("loginCard").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+
+document.getElementById("userDisplay").innerText = user.username;
+
+loadBalance();
+loadHistory();
+
+}else{
+alert("Invalid Login");
+}
+
+});
 
 }
 
 
-/* DEPOSIT */
+// LOAD BALANCE
+function loadBalance(){
+
+fetch(API + "/balance/" + currentUser.id)
+.then(res=>res.text())
+.then(balance=>{
+document.getElementById("balance").innerText = balance;
+});
+
+}
+
+
+// DEPOSIT
 function deposit(){
 
-if(!loggedUser){
-alert("Login first");
-return;
-}
+let amount = document.getElementById("amount").value;
 
-let amount=Number(document.getElementById("amount").value);
-
-if(amount<=0){
-alert("Enter valid amount");
-return;
-}
-
-fetch(API+"/deposit",{
-
+fetch(API + "/deposit",{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
-userId:loggedUser.id,
+userId:currentUser.id,
 amount:amount
 })
-
 })
 .then(res=>res.text())
 .then(msg=>{
-
 alert(msg);
-
-currentBalance+=amount;
-
-updateBalance();
-
-addHistory("Deposit",amount);
-
-document.getElementById("amount").value="";
-
-})
-.catch(()=>alert("Deposit failed"));
+loadBalance();
+loadHistory();
+});
 
 }
 
 
-/* WITHDRAW */
+// WITHDRAW
 function withdraw(){
 
-if(!loggedUser){
-alert("Login first");
-return;
-}
+let amount = document.getElementById("amount").value;
 
-let amount=Number(document.getElementById("amount").value);
-
-if(amount<=0){
-alert("Enter valid amount");
-return;
-}
-
-fetch(API+"/withdraw",{
-
+fetch(API + "/withdraw",{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
-userId:loggedUser.id,
+userId:currentUser.id,
 amount:amount
 })
-
 })
 .then(res=>res.text())
 .then(msg=>{
-
 alert(msg);
+loadBalance();
+loadHistory();
+});
 
-currentBalance-=amount;
+}
 
-updateBalance();
 
-addHistory("Withdraw",amount);
+// TRANSFER MONEY
+function transferMoney(){
 
-document.getElementById("amount").value="";
+let receiver = document.getElementById("receiver").value;
+let amount = document.getElementById("transferAmount").value;
 
+fetch(API + "/transfer",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+senderId:currentUser.id,
+receiverUsername:receiver,
+amount:amount
 })
-.catch(()=>alert("Withdraw failed"));
+})
+.then(res=>res.text())
+.then(msg=>{
+alert(msg);
+loadBalance();
+loadHistory();
+});
 
 }
 
 
-/* UPDATE BALANCE */
-function updateBalance(){
-document.getElementById("balance").innerText=currentBalance;
+// LOAD TRANSACTION HISTORY
+function loadHistory(){
+
+fetch(API + "/transactions/" + currentUser.id)
+
+.then(res=>res.json())
+
+.then(data=>{
+
+let historyTable = document.getElementById("history");
+historyTable.innerHTML = "";
+
+data.forEach(tx=>{
+
+let dateTime = "N/A";
+
+if(tx.dateTime){
+dateTime = new Date(tx.dateTime).toLocaleString();
 }
 
-
-/* ADD HISTORY */
-function addHistory(type,amount){
-
-let history=document.getElementById("history");
-
-let date=new Date().toLocaleString();
-
-let row=`
+let row = `
 <tr>
-<td>${type}</td>
-<td>₹${amount}</td>
-<td>${date}</td>
+<td>${tx.type}</td>
+<td>₹${tx.amount}</td>
+<td>${dateTime}</td>
 </tr>
 `;
 
-history.innerHTML+=row;
+historyTable.innerHTML += row;
+
+});
+
+});
 
 }
 
 
-/* CLEAR HISTORY */
+// CLEAR HISTORY
 function clearHistory(){
 document.getElementById("history").innerHTML="";
 }
 
 
-/* RESET PASSWORD */
+// RESET PASSWORD
 function resetPassword(){
 
-    let username = document.getElementById("forgotUser").value.trim();
-    let newPassword = document.getElementById("newPass").value.trim();
+let username = document.getElementById("forgotUser").value;
+let password = document.getElementById("newPass").value;
 
-    if(!username || !newPassword){
-        alert("Fill all fields");
-        return;
-    }
-
-    fetch("http://localhost:9093/api/bank/resetPassword",{
-
-        method:"POST",
-
-        headers:{
-            "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-            username:username,
-            password:newPassword
-        })
-
-    })
-    .then(res=>res.text())
-    .then(msg=>{
-        alert(msg);
-        backToLogin();
-    })
-    .catch(()=>{
-        alert("Password reset failed");
-    });
-}
-
-
-/* UI CONTROLS */
-
-function showRegister(){
-hideAll();
-document.getElementById("registerCard").classList.remove("hidden");
-}
-
-function showForgot(){
-hideAll();
-document.getElementById("forgotCard").classList.remove("hidden");
-}
-
-function backToLogin(){
-hideAll();
-document.getElementById("loginCard").classList.remove("hidden");
-}
-
-function hideAll(){
-
-document.getElementById("loginCard").classList.add("hidden");
-document.getElementById("registerCard").classList.add("hidden");
-document.getElementById("forgotCard").classList.add("hidden");
+fetch(API + "/resetPassword",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+username:username,
+password:password
+})
+})
+.then(res=>res.text())
+.then(msg=>{
+alert(msg);
+backToLogin();
+});
 
 }
 
 
-/* LOGOUT */
-
+// LOGOUT
 function logout(){
 
-if(confirm("Logout?")){
-
-loggedUser=null;
-
-currentBalance=0;
-
-document.getElementById("balance").innerText="0";
-
-document.getElementById("history").innerHTML="";
+currentUser = null;
 
 document.getElementById("dashboard").classList.add("hidden");
-
 document.getElementById("loginCard").classList.remove("hidden");
-
-}
 
 }

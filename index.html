@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Online Banking System</title>
 
-<link rel="stylesheet" href="style.css">
+<title>Online Banking System</title>
 
 <style>
 
 body{
-font-family: Arial;
+font-family: Arial, sans-serif;
 background:#bc2088;
 display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
+margin:0;
 }
 
 .container{
-width:350px;
+width:360px;
 }
 
 .card{
-background:rgb(255, 255, 255);
+background:#ffffff;
 padding:25px;
 border-radius:10px;
 box-shadow:0 5px 15px rgba(0,0,0,0.2);
@@ -36,6 +38,7 @@ padding:10px;
 margin:10px 0;
 border:1px solid #ccc;
 border-radius:5px;
+font-size:14px;
 }
 
 button{
@@ -47,6 +50,7 @@ background:#007bff;
 color:white;
 border-radius:5px;
 cursor:pointer;
+font-size:15px;
 }
 
 button:hover{
@@ -57,6 +61,7 @@ background:#0056b3;
 color:#007bff;
 cursor:pointer;
 margin-top:10px;
+display:block;
 }
 
 .hidden{
@@ -64,14 +69,15 @@ display:none;
 }
 
 .balance{
-font-size:25px;
+font-size:26px;
 margin:15px 0;
 font-weight:bold;
+color:#28a745;
 }
 
 .history{
 margin-top:15px;
-max-height:150px;
+max-height:160px;
 overflow:auto;
 }
 
@@ -80,18 +86,38 @@ width:100%;
 border-collapse:collapse;
 }
 
+th{
+background:#007bff;
+color:white;
+}
+
 th,td{
 border:1px solid #ccc;
-padding:5px;
+padding:6px;
 font-size:13px;
+text-align:center;
 }
 
 .logout-btn{
 background:red;
 }
 
+.logout-btn:hover{
+background:#c40000;
+}
+
 .clear-btn{
 background:orange;
+}
+
+.clear-btn:hover{
+background:#cc8400;
+}
+
+.transfer-section{
+margin-top:15px;
+padding-top:10px;
+border-top:1px solid #ddd;
 }
 
 </style>
@@ -102,13 +128,15 @@ background:orange;
 
 <div class="container">
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
+
 <div class="card" id="loginCard">
 
 <h2>Mobile Banking Login</h2>
 
-<input type="text" id="username" placeholder="Username">
-<input type="password" id="password" placeholder="Password">
+<input type="text" id="username" placeholder="Username" required>
+
+<input type="password" id="password" placeholder="Password" required>
 
 <button onclick="login()">Login</button>
 
@@ -118,13 +146,15 @@ background:orange;
 </div>
 
 
-<!-- REGISTER -->
+<!-- ================= REGISTER ================= -->
+
 <div class="card hidden" id="registerCard">
 
 <h2>User Registration</h2>
 
-<input type="text" id="regUser" placeholder="Create Username">
-<input type="password" id="regPass" placeholder="Create Password">
+<input type="text" id="regUser" placeholder="Create Username" required>
+
+<input type="password" id="regPass" placeholder="Create Password" required>
 
 <button onclick="register()">Register</button>
 
@@ -133,13 +163,15 @@ background:orange;
 </div>
 
 
-<!-- FORGOT PASSWORD -->
+<!-- ================= RESET PASSWORD ================= -->
+
 <div class="card hidden" id="forgotCard">
 
 <h2>Reset Password</h2>
 
-<input type="text" id="forgotUser" placeholder="Enter Username">
-<input type="password" id="newPass" placeholder="New Password">
+<input type="text" id="forgotUser" placeholder="Enter Username" required>
+
+<input type="password" id="newPass" placeholder="New Password" required>
 
 <button onclick="resetPassword()">Reset Password</button>
 
@@ -148,7 +180,8 @@ background:orange;
 </div>
 
 
-<!-- DASHBOARD -->
+<!-- ================= DASHBOARD ================= -->
+
 <div class="card hidden" id="dashboard">
 
 <h2>Welcome <span id="userDisplay"></span></h2>
@@ -157,16 +190,40 @@ background:orange;
 ₹ <span id="balance">0</span>
 </div>
 
-<input type="number" id="amount" placeholder="Enter amount">
+<!-- Deposit / Withdraw -->
+
+<input type="number" id="amount" placeholder="Enter amount" min="1">
 
 <button onclick="deposit()">Deposit</button>
+
 <button onclick="withdraw()">Withdraw</button>
 
-<button onclick="clearHistory()" class="clear-btn">
+
+<!-- ================= TRANSFER MONEY ================= -->
+
+<div class="transfer-section">
+
+<h3>Transfer Money</h3>
+
+<input type="text" id="receiver" placeholder="Receiver Username">
+
+<input type="number" id="transferAmount" placeholder="Enter Amount" min="1">
+
+<button onclick="transferMoney()">Transfer</button>
+
+</div>
+
+
+<button class="clear-btn" onclick="clearHistory()">
 Clear Transaction History
 </button>
 
-<button class="logout-btn" onclick="logout()">Logout</button>
+<button class="logout-btn" onclick="logout()">
+Logout
+</button>
+
+
+<!-- ================= TRANSACTION HISTORY ================= -->
 
 <h3>Transaction History</h3>
 
@@ -177,7 +234,7 @@ Clear Transaction History
 <thead>
 <tr>
 <th>Type</th>
-<th>Amount</th>
+<th>Amount (₹)</th>
 <th>Date & Time</th>
 </tr>
 </thead>
@@ -195,4 +252,5 @@ Clear Transaction History
 <script src="script.js"></script>
 
 </body>
+
 </html>
