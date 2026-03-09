@@ -24,11 +24,33 @@ document.getElementById("loginCard").classList.remove("hidden");
 }
 
 
+// ================= SEND EMAIL =================
+function sendMail(message){
+
+fetch(API + "/sendMail",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+email: currentUser.email,
+message: message
+})
+})
+.then(res=>res.text())
+.then(data=>{
+console.log("Mail Sent");
+});
+
+}
+
+
 // REGISTER
 function register(){
 
 let username = document.getElementById("regUser").value;
 let password = document.getElementById("regPass").value;
+let email = document.getElementById("regEmail").value;
 
 fetch(API + "/register",{
 method:"POST",
@@ -37,7 +59,8 @@ headers:{
 },
 body:JSON.stringify({
 username:username,
-password:password
+password:password,
+email:email
 })
 })
 .then(res=>res.text())
@@ -119,6 +142,9 @@ amount:amount
 .then(res=>res.text())
 .then(msg=>{
 alert(msg);
+
+sendMail("₹"+amount+" deposited successfully into your account.");
+
 loadBalance();
 loadHistory();
 });
@@ -144,6 +170,9 @@ amount:amount
 .then(res=>res.text())
 .then(msg=>{
 alert(msg);
+
+sendMail("₹"+amount+" withdrawn from your account.");
+
 loadBalance();
 loadHistory();
 });
@@ -171,6 +200,9 @@ amount:amount
 .then(res=>res.text())
 .then(msg=>{
 alert(msg);
+
+sendMail("₹"+amount+" transferred to "+receiver+" successfully.");
+
 loadBalance();
 loadHistory();
 });
