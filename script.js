@@ -200,7 +200,18 @@ function loadHistory() {
 
 // ================= CLEAR HISTORY =================
 function clearHistory() {
-    document.getElementById("history").innerHTML = "";
+    if (!currentUser || !currentUser.id) return;
+
+    fetch(`${API}/transactions/${currentUser.id}/clear`, { method: "DELETE" })
+        .then(res => res.text())
+        .then(msg => {
+            alert(msg);
+            loadHistory(); // reload empty history
+        })
+        .catch(err => {
+            console.error("Failed to clear history:", err);
+            alert("Failed to clear transaction history.");
+        });
 }
 
 // ================= RESET PASSWORD =================
@@ -222,7 +233,18 @@ function resetPassword() {
 
 // ================= LOGOUT =================
 function logout() {
-    currentUser = null;
-    document.getElementById("dashboard").classList.add("hidden");
-    document.getElementById("loginCard").classList.remove("hidden");
+    if (!currentUser || !currentUser.id) return;
+
+    fetch(`${API}/logout?userId=${currentUser.id}`, { method: "POST" })
+        .then(res => res.text())
+        .then(msg => {
+            alert(msg);
+            currentUser = null;
+            document.getElementById("dashboard").classList.add("hidden");
+            document.getElementById("loginCard").classList.remove("hidden");
+        })
+        .catch(err => {
+            console.error("Logout failed:", err);
+            alert("Logout failed. Try again.");
+        });
 }
