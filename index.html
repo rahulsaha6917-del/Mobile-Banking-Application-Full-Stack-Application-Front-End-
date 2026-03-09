@@ -2,233 +2,169 @@
 <html lang="en">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Online Banking System</title>
-
 <style>
-
 body{
-font-family: Arial, sans-serif;
-background:#bc2088;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-margin:0;
+    font-family: Arial, sans-serif;
+    background:#bc2088;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    margin:0;
 }
-
 .container{
-width:360px;
+    width:360px;
 }
-
 .card{
-background:#ffffff;
-padding:25px;
-border-radius:10px;
-box-shadow:0 5px 15px rgba(0,0,0,0.2);
-text-align:center;
+    background:#ffffff;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+    text-align:center;
 }
-
 input{
-width:100%;
-padding:10px;
-margin:10px 0;
-border:1px solid #ccc;
-border-radius:5px;
-font-size:14px;
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:1px solid #ccc;
+    border-radius:5px;
+    font-size:14px;
 }
-
 button{
-width:100%;
-padding:10px;
-margin:5px 0;
-border:none;
-background:#007bff;
-color:white;
-border-radius:5px;
-cursor:pointer;
-font-size:15px;
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    background:#007bff;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:15px;
 }
-
 button:hover{
-background:#0056b3;
+    background:#0056b3;
 }
-
 .link{
-color:#007bff;
-cursor:pointer;
-margin-top:10px;
-display:block;
+    color:#007bff;
+    cursor:pointer;
+    margin-top:10px;
+    display:block;
 }
-
 .hidden{
-display:none;
+    display:none;
 }
-
 .balance{
-font-size:26px;
-margin:15px 0;
-font-weight:bold;
-color:#28a745;
+    font-size:26px;
+    margin:15px 0;
+    font-weight:bold;
+    color:#28a745;
 }
-
 .history{
-margin-top:15px;
-max-height:160px;
-overflow:auto;
+    margin-top:15px;
+    max-height:160px;
+    overflow:auto;
 }
-
 table{
-width:100%;
-border-collapse:collapse;
+    width:100%;
+    border-collapse:collapse;
 }
-
 th{
-background:#007bff;
-color:white;
+    background:#007bff;
+    color:white;
 }
-
 th,td{
-border:1px solid #ccc;
-padding:6px;
-font-size:13px;
-text-align:center;
+    border:1px solid #ccc;
+    padding:6px;
+    font-size:13px;
+    text-align:center;
 }
-
 .logout-btn{
-background:red;
+    background:red;
 }
-
 .logout-btn:hover{
-background:#c40000;
+    background:#c40000;
 }
-
 .clear-btn{
-background:orange;
+    background:orange;
 }
-
 .clear-btn:hover{
-background:#cc8400;
+    background:#cc8400;
 }
-
 .transfer-section{
-margin-top:15px;
-padding-top:10px;
-border-top:1px solid #ddd;
+    margin-top:15px;
+    padding-top:10px;
+    border-top:1px solid #ddd;
 }
-
 </style>
-
 </head>
 
 <body>
-
 <div class="container">
 
 <!-- ================= LOGIN ================= -->
-
 <div class="card" id="loginCard">
-
 <h2>Mobile Banking Login</h2>
-
 <input type="text" id="username" placeholder="Username" required>
-
 <input type="password" id="password" placeholder="Password" required>
-
+<input type="text" id="loginPhone" placeholder="Phone Number" required>
 <button onclick="login()">Login</button>
-
 <p class="link" onclick="showRegister()">New User? Register</p>
 <p class="link" onclick="showForgot()">Forgot Password?</p>
-
 </div>
-
 
 <!-- ================= REGISTER ================= -->
-
 <div class="card hidden" id="registerCard">
-
 <h2>User Registration</h2>
-
 <input type="text" id="regUser" placeholder="Create Username" required>
-
 <input type="email" id="regEmail" placeholder="Enter Email Address" required>
-
 <input type="password" id="regPass" placeholder="Create Password" required>
-
+<input type="text" id="regPhone" placeholder="Phone Number" required>
 <button onclick="register()">Register</button>
-
 <p class="link" onclick="backToLogin()">Back to Login</p>
-
 </div>
 
+<!-- ================= OTP VERIFICATION ================= -->
+<div class="card hidden" id="otpCard">
+<h2>Enter OTP</h2>
+<p>An OTP has been sent to your phone: <span id="otpPhone"></span></p>
+<input type="text" id="otpInput" placeholder="Enter OTP" required>
+<button onclick="verifyOtp()">Verify OTP</button>
+<p class="link" onclick="backToLogin()">Back to Login</p>
+</div>
 
 <!-- ================= RESET PASSWORD ================= -->
-
 <div class="card hidden" id="forgotCard">
-
 <h2>Reset Password</h2>
-
 <input type="text" id="forgotUser" placeholder="Enter Username" required>
-
 <input type="password" id="newPass" placeholder="New Password" required>
-
 <button onclick="resetPassword()">Reset Password</button>
-
 <p class="link" onclick="backToLogin()">Back to Login</p>
-
 </div>
-
 
 <!-- ================= DASHBOARD ================= -->
-
 <div class="card hidden" id="dashboard">
-
 <h2>Welcome <span id="userDisplay"></span></h2>
-
-<div class="balance">
-₹ <span id="balance">0</span>
-</div>
-
+<div class="balance">₹ <span id="balance">0</span></div>
 <input type="number" id="amount" placeholder="Enter amount" min="1">
-
 <button onclick="deposit()">Deposit</button>
-
 <button onclick="withdraw()">Withdraw</button>
 
-
-<!-- ================= TRANSFER MONEY ================= -->
-
 <div class="transfer-section">
-
 <h3>Transfer Money</h3>
-
 <input type="text" id="receiver" placeholder="Receiver Username">
-
 <input type="number" id="transferAmount" placeholder="Enter Amount" min="1">
-
 <button onclick="transferMoney()">Transfer</button>
-
 </div>
 
-
-<button class="clear-btn" onclick="clearHistory()">
-Clear Transaction History
-</button>
-
-<button class="logout-btn" onclick="logout()">
-Logout
-</button>
-
+<button class="clear-btn" onclick="clearHistory()">Clear Transaction History</button>
+<button class="logout-btn" onclick="logout()">Logout</button>
 
 <h3>Transaction History</h3>
-
 <div class="history">
-
 <table>
-
 <thead>
 <tr>
 <th>Type</th>
@@ -236,19 +172,12 @@ Logout
 <th>Date & Time</th>
 </tr>
 </thead>
-
 <tbody id="history"></tbody>
-
 </table>
-
+</div>
 </div>
 
 </div>
-
-</div>
-
 <script src="script.js"></script>
-
 </body>
-
 </html>
