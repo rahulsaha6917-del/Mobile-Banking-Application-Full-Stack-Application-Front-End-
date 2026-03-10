@@ -1,11 +1,13 @@
 let currentUser = null;
 const API = "http://localhost:9093/api/bank";
 
+
 // ================= SHOW REGISTER =================
 function showRegister() {
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("registerCard").classList.remove("hidden");
 }
+
 
 // ================= SHOW FORGOT =================
 function showForgot() {
@@ -13,16 +15,22 @@ function showForgot() {
     document.getElementById("forgotCard").classList.remove("hidden");
 }
 
+
 // ================= BACK TO LOGIN =================
 function backToLogin() {
     document.getElementById("registerCard").classList.add("hidden");
     document.getElementById("forgotCard").classList.add("hidden");
     document.getElementById("otpCard").classList.add("hidden");
+    document.getElementById("dashboard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
 }
 
+
 // ================= SEND EMAIL =================
 function sendMail(message) {
+
+    if (!currentUser || !currentUser.email) return;
+
     fetch(API + "/sendMail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,15 +40,23 @@ function sendMail(message) {
         })
     })
     .then(res => res.text())
-    .then(() => console.log("Mail Sent"));
+    .then(() => console.log("Mail Sent"))
+    .catch(err => console.error("Mail Error:", err));
 }
 
-// ================= REGISTER WITH OTP =================
+
+// ================= REGISTER =================
 function register() {
-    let username = document.getElementById("regUser").value;
-    let password = document.getElementById("regPass").value;
-    let email = document.getElementById("regEmail").value;
-    let phone = document.getElementById("regPhone").value;
+
+    let username = document.getElementById("regUser").value.trim();
+    let password = document.getElementById("regPass").value.trim();
+    let email = document.getElementById("regEmail").value.trim();
+    let phone = document.getElementById("regPhone").value.trim();
+
+    if (!username || !password || !email || !phone) {
+        alert("Please fill all fields");
+        return;
+    }
 
     fetch(API + "/register", {
         method: "POST",
@@ -49,114 +65,184 @@ function register() {
     })
     .then(res => res.text())
     .then(msg => {
+
         alert(msg);
-        currentUser = { username, phone, email };
+
+        currentUser = { username, email, phone };
+
         sendOtp(phone);
 
         document.getElementById("registerCard").classList.add("hidden");
         document.getElementById("otpCard").classList.remove("hidden");
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Registration failed");
     });
 }
 
-// ================= LOGIN WITH OTP =================
+
+// ================= LOGIN =================
 function login() {
-    let username = document.getElementById("username").value;
-    let password = document.getElementById("password").value;
-    let phone = document.getElementById("loginPhone").value;
+
+    let username = document.getElementById("username").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let phone = document.getElementById("loginPhone").value.trim();
+
+    if (!username || !password) {
+        alert("Enter username and password");
+        return;
+    }
 
     fetch(API + "/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
     })
-    .then(res => res.json())
-    .then(user => {
-        if (user && user.id) {
-            currentUser = { ...user, phone }; // save phone for OTP
-            sendOtp(phone);
+    .then(res => {
 
-            document.getElementById("loginCard").classList.add("hidden");
-            document.getElementById("otpCard").classList.remove("hidden");
-        } else {
-            alert("Invalid Login");
+        if (!res.ok) {
+            throw new Error("Invalid Credentials");
         }
+
+        return res.json();
+    })
+    .then(user => {
+
+        if (!user || !user.id) {
+            alert("Invalid Username or Password");
+            return;
+        }
+
+        alert("Login Successful");
+
+        currentUser = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            phone: phone
+        };
+
+        sendOtp(phone);
+
+        document.getElementById("loginCard").classList.add("hidden");
+        document.getElementById("otpCard").classList.remove("hidden");
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Invalid Username or Password");
     });
 }
 
+
 // ================= SEND OTP =================
 function sendOtp(phone) {
+
     fetch(`${API}/sendOtp?phone=${phone}`, { method: "POST" })
-        .then(res => res.text())
-        .then(msg => alert(msg));
+    .then(res => res.text())
+    .then(msg => alert(msg))
+    .catch(err => console.error("OTP Error:", err));
 }
+
 
 // ================= VERIFY OTP =================
 function verifyOtp() {
-    let otp = document.getElementById("otpInput").value;
+
+    let otp = document.getElementById("otpInput").value.trim();
+
+    if (!otp) {
+        alert("Enter OTP");
+        return;
+    }
 
     fetch(`${API}/verifyOtp?phone=${currentUser.phone}&otp=${otp}`, { method: "POST" })
-        .then(res => res.text())
-        .then(msg => {
-            if (msg === "OTP Verified Successfully") {
-                document.getElementById("otpCard").classList.add("hidden");
-                document.getElementById("dashboard").classList.remove("hidden");
+    .then(res => res.text())
+    .then(msg => {
 
-                document.getElementById("userDisplay").innerText = currentUser.username;
-                loadBalance();
-                loadHistory();
-            } else {
-                alert(msg);
-            }
-        });
+        if (msg === "OTP Verified Successfully") {
+
+            document.getElementById("otpCard").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
+
+            document.getElementById("userDisplay").innerText = currentUser.username;
+
+            loadBalance();
+            loadHistory();
+
+        } else {
+            alert(msg);
+        }
+
+    })
+    .catch(err => console.error("OTP Verify Error:", err));
 }
+
 
 // ================= LOAD BALANCE =================
 function loadBalance() {
+
     fetch(API + "/balance/" + currentUser.id)
-        .then(res => res.text())
-        .then(balance => {
-            document.getElementById("balance").innerText = balance;
-        });
+    .then(res => res.text())
+    .then(balance => {
+        document.getElementById("balance").innerText = balance;
+    })
+    .catch(err => console.error(err));
 }
+
 
 // ================= DEPOSIT =================
 function deposit() {
+
     let amount = document.getElementById("amount").value;
 
     fetch(API + "/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, amount: amount })
+        body: JSON.stringify({ userId: currentUser.id, amount })
     })
     .then(res => res.text())
     .then(msg => {
+
         alert(msg);
-        sendMail("₹" + amount + " deposited successfully into your account.");
+
+        sendMail("₹" + amount + " deposited successfully.");
+
         loadBalance();
         loadHistory();
+
     });
 }
 
+
 // ================= WITHDRAW =================
 function withdraw() {
+
     let amount = document.getElementById("amount").value;
 
     fetch(API + "/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, amount: amount })
+        body: JSON.stringify({ userId: currentUser.id, amount })
     })
     .then(res => res.text())
     .then(msg => {
+
         alert(msg);
-        sendMail("₹" + amount + " withdrawn from your account.");
+
+        sendMail("₹" + amount + " withdrawn from account.");
+
         loadBalance();
         loadHistory();
+
     });
 }
 
-// ================= TRANSFER MONEY =================
+
+// ================= TRANSFER =================
 function transferMoney() {
+
     let receiver = document.getElementById("receiver").value;
     let amount = document.getElementById("transferAmount").value;
 
@@ -166,56 +252,73 @@ function transferMoney() {
         body: JSON.stringify({
             senderId: currentUser.id,
             receiverUsername: receiver,
-            amount: amount
+            amount
         })
     })
     .then(res => res.text())
     .then(msg => {
+
         alert(msg);
-        sendMail("₹" + amount + " transferred to " + receiver + " successfully.");
+
+        sendMail("₹" + amount + " transferred to " + receiver);
+
         loadBalance();
         loadHistory();
+
     });
 }
 
+
 // ================= LOAD TRANSACTION HISTORY =================
 function loadHistory() {
-    fetch(API + "/transactions/" + currentUser.id)
-        .then(res => res.json())
-        .then(data => {
-            let historyTable = document.getElementById("history");
-            historyTable.innerHTML = "";
 
-            data.forEach(tx => {
-                let dateTime = tx.dateTime ? new Date(tx.dateTime).toLocaleString() : "N/A";
-                let row = `<tr>
-                    <td>${tx.type}</td>
-                    <td>₹${tx.amount}</td>
-                    <td>${dateTime}</td>
-                </tr>`;
-                historyTable.innerHTML += row;
-            });
+    fetch(API + "/transactions/" + currentUser.id)
+    .then(res => res.json())
+    .then(data => {
+
+        let historyTable = document.getElementById("history");
+        historyTable.innerHTML = "";
+
+        data.forEach(tx => {
+
+            let dateTime = tx.dateTime ?
+                new Date(tx.dateTime).toLocaleString() : "N/A";
+
+            historyTable.innerHTML += `
+            <tr>
+                <td>${tx.type}</td>
+                <td>₹${tx.amount}</td>
+                <td>${dateTime}</td>
+            </tr>`;
         });
+
+    });
 }
+
 
 // ================= CLEAR HISTORY =================
 function clearHistory() {
-    if (!currentUser || !currentUser.id) return;
 
-    fetch(`${API}/transactions/${currentUser.id}/clear`, { method: "DELETE" })
-        .then(res => res.text())
-        .then(msg => {
-            alert(msg);
-            loadHistory(); // reload empty history
-        })
-        .catch(err => {
-            console.error("Failed to clear history:", err);
-            alert("Failed to clear transaction history.");
-        });
+    if (!currentUser) return;
+
+    fetch(`${API}/transactions/${currentUser.id}/clear`, {
+        method: "DELETE"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        alert(msg);
+
+        loadHistory();
+
+    })
+    .catch(err => console.error(err));
 }
+
 
 // ================= RESET PASSWORD =================
 function resetPassword() {
+
     let username = document.getElementById("forgotUser").value;
     let password = document.getElementById("newPass").value;
 
@@ -226,25 +329,33 @@ function resetPassword() {
     })
     .then(res => res.text())
     .then(msg => {
+
         alert(msg);
+
         backToLogin();
+
     });
 }
 
+
 // ================= LOGOUT =================
 function logout() {
-    if (!currentUser || !currentUser.id) return;
 
-    fetch(`${API}/logout?userId=${currentUser.id}`, { method: "POST" })
-        .then(res => res.text())
-        .then(msg => {
-            alert(msg);
-            currentUser = null;
-            document.getElementById("dashboard").classList.add("hidden");
-            document.getElementById("loginCard").classList.remove("hidden");
-        })
-        .catch(err => {
-            console.error("Logout failed:", err);
-            alert("Logout failed. Try again.");
-        });
+    if (!currentUser) return;
+
+    fetch(`${API}/logout?userId=${currentUser.id}`, {
+        method: "POST"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        alert(msg);
+
+        currentUser = null;
+
+        document.getElementById("dashboard").classList.add("hidden");
+        document.getElementById("loginCard").classList.remove("hidden");
+
+    })
+    .catch(err => console.error(err));
 }
