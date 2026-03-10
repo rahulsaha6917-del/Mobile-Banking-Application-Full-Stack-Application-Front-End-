@@ -1,28 +1,37 @@
 let currentUser = null;
+let otpMode = ""; // registerOTP or loginOTP
+
 const API = "http://localhost:9093/api/bank";
 
 
 // ================= SHOW REGISTER =================
 function showRegister() {
+
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("registerCard").classList.remove("hidden");
+
 }
 
 
 // ================= SHOW FORGOT =================
 function showForgot() {
+
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("forgotCard").classList.remove("hidden");
+
 }
 
 
 // ================= BACK TO LOGIN =================
 function backToLogin() {
+
     document.getElementById("registerCard").classList.add("hidden");
     document.getElementById("forgotCard").classList.add("hidden");
     document.getElementById("otpCard").classList.add("hidden");
     document.getElementById("dashboard").classList.add("hidden");
+
     document.getElementById("loginCard").classList.remove("hidden");
+
 }
 
 
@@ -34,6 +43,7 @@ function sendMail(message) {
     fetch(API + "/sendMail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+
         body: JSON.stringify({
             email: currentUser.email,
             message: message
@@ -41,7 +51,8 @@ function sendMail(message) {
     })
     .then(res => res.text())
     .then(() => console.log("Mail Sent"))
-    .catch(err => console.error("Mail Error:", err));
+    .catch(err => console.error(err));
+
 }
 
 
@@ -54,21 +65,39 @@ function register() {
     let phone = document.getElementById("regPhone").value.trim();
 
     if (!username || !password || !email || !phone) {
-        alert("Please fill all fields");
+
+        alert("Fill all fields");
         return;
     }
 
     fetch(API + "/register", {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, email, phone })
+
+        body: JSON.stringify({
+            username,
+            password,
+            email,
+            phone
+        })
+
     })
     .then(res => res.text())
     .then(msg => {
 
+        // duplicate check
+        if(msg.includes("exists") || msg.includes("duplicate")){
+
+            alert(msg);
+            return;
+        }
+
         alert(msg);
 
         currentUser = { username, email, phone };
+
+        otpMode = "registerOTP";
 
         sendOtp(phone);
 
@@ -77,9 +106,12 @@ function register() {
 
     })
     .catch(err => {
+
         console.error(err);
         alert("Registration failed");
+
     });
+
 }
 
 
@@ -91,38 +123,44 @@ function login() {
     let phone = document.getElementById("loginPhone").value.trim();
 
     if (!username || !password) {
+
         alert("Enter username and password");
         return;
     }
 
     fetch(API + "/login", {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+
+        body: JSON.stringify({
+            username,
+            password
+        })
+
     })
     .then(res => {
 
         if (!res.ok) {
+
             throw new Error("Invalid Credentials");
         }
 
         return res.json();
+
     })
     .then(user => {
 
-        if (!user || !user.id) {
-            alert("Invalid Username or Password");
-            return;
-        }
-
-        alert("Login Successful");
-
         currentUser = {
+
             id: user.id,
             username: user.username,
             email: user.email,
             phone: phone
+
         };
+
+        otpMode = "loginOTP";
 
         sendOtp(phone);
 
@@ -131,19 +169,27 @@ function login() {
 
     })
     .catch(err => {
+
         console.error(err);
         alert("Invalid Username or Password");
+
     });
+
 }
 
 
 // ================= SEND OTP =================
 function sendOtp(phone) {
 
-    fetch(`${API}/sendOtp?phone=${phone}`, { method: "POST" })
+    fetch(`${API}/sendOtp?phone=${phone}`, {
+
+        method: "POST"
+
+    })
     .then(res => res.text())
     .then(msg => alert(msg))
-    .catch(err => console.error("OTP Error:", err));
+    .catch(err => console.error(err));
+
 }
 
 
@@ -153,30 +199,54 @@ function verifyOtp() {
     let otp = document.getElementById("otpInput").value.trim();
 
     if (!otp) {
+
         alert("Enter OTP");
         return;
     }
 
-    fetch(`${API}/verifyOtp?phone=${currentUser.phone}&otp=${otp}`, { method: "POST" })
+    fetch(`${API}/verifyOtp?phone=${currentUser.phone}&otp=${otp}`, {
+
+        method: "POST"
+
+    })
     .then(res => res.text())
     .then(msg => {
 
-        if (msg === "OTP Verified Successfully") {
+        if(msg === "OTP Verified Successfully"){
 
-            document.getElementById("otpCard").classList.add("hidden");
-            document.getElementById("dashboard").classList.remove("hidden");
+            // REGISTER OTP
+            if(otpMode === "registerOTP"){
 
-            document.getElementById("userDisplay").innerText = currentUser.username;
+                alert("Registration completed. Please login.");
 
-            loadBalance();
-            loadHistory();
+                backToLogin();
 
-        } else {
-            alert(msg);
+                return;
+            }
+
+            // LOGIN OTP
+            if(otpMode === "loginOTP"){
+
+                document.getElementById("otpCard").classList.add("hidden");
+                document.getElementById("dashboard").classList.remove("hidden");
+
+                document.getElementById("userDisplay").innerText = currentUser.username;
+
+                localStorage.setItem("bankUser", JSON.stringify(currentUser));
+
+                loadBalance();
+                loadHistory();
+            }
+
+        }
+        else{
+
+            alert("Wrong OTP");
         }
 
     })
-    .catch(err => console.error("OTP Verify Error:", err));
+    .catch(err => console.error(err));
+
 }
 
 
@@ -184,11 +254,16 @@ function verifyOtp() {
 function loadBalance() {
 
     fetch(API + "/balance/" + currentUser.id)
+
     .then(res => res.text())
+
     .then(balance => {
+
         document.getElementById("balance").innerText = balance;
+
     })
     .catch(err => console.error(err));
+
 }
 
 
@@ -197,22 +272,38 @@ function deposit() {
 
     let amount = document.getElementById("amount").value;
 
+    if(amount <= 0){
+
+        alert("Enter valid amount");
+        return;
+    }
+
     fetch(API + "/deposit", {
+
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, amount })
+
+        body: JSON.stringify({
+
+            userId: currentUser.id,
+            amount: amount
+
+        })
+
     })
     .then(res => res.text())
     .then(msg => {
 
         alert(msg);
 
-        sendMail("₹" + amount + " deposited successfully.");
+        sendMail("₹" + amount + " deposited successfully");
 
         loadBalance();
         loadHistory();
 
     });
+
 }
 
 
@@ -221,39 +312,73 @@ function withdraw() {
 
     let amount = document.getElementById("amount").value;
 
+    if(amount <= 0){
+
+        alert("Enter valid amount");
+        return;
+    }
+
     fetch(API + "/withdraw", {
+
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, amount })
+
+        body: JSON.stringify({
+
+            userId: currentUser.id,
+            amount: amount
+
+        })
+
     })
     .then(res => res.text())
     .then(msg => {
 
         alert(msg);
 
-        sendMail("₹" + amount + " withdrawn from account.");
+        sendMail("₹" + amount + " withdrawn");
 
         loadBalance();
         loadHistory();
 
     });
+
 }
 
 
 // ================= TRANSFER =================
 function transferMoney() {
 
-    let receiver = document.getElementById("receiver").value;
+    let receiver = document.getElementById("receiver").value.trim();
     let amount = document.getElementById("transferAmount").value;
 
+    if(receiver === currentUser.username){
+
+        alert("Cannot transfer to yourself");
+        return;
+    }
+
+    if(amount <= 0){
+
+        alert("Enter valid amount");
+        return;
+    }
+
     fetch(API + "/transfer", {
+
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
+
         body: JSON.stringify({
+
             senderId: currentUser.id,
             receiverUsername: receiver,
-            amount
+            amount: amount
+
         })
+
     })
     .then(res => res.text())
     .then(msg => {
@@ -266,43 +391,51 @@ function transferMoney() {
         loadHistory();
 
     });
+
 }
 
 
-// ================= LOAD TRANSACTION HISTORY =================
+// ================= LOAD HISTORY =================
 function loadHistory() {
 
     fetch(API + "/transactions/" + currentUser.id)
+
     .then(res => res.json())
+
     .then(data => {
 
-        let historyTable = document.getElementById("history");
-        historyTable.innerHTML = "";
+        let history = document.getElementById("history");
+
+        history.innerHTML = "";
 
         data.forEach(tx => {
 
-            let dateTime = tx.dateTime ?
-                new Date(tx.dateTime).toLocaleString() : "N/A";
+            let time = tx.dateTime ? new Date(tx.dateTime).toLocaleString() : "";
 
-            historyTable.innerHTML += `
+            history.innerHTML += `
+
             <tr>
-                <td>${tx.type}</td>
-                <td>₹${tx.amount}</td>
-                <td>${dateTime}</td>
-            </tr>`;
+            <td>${tx.type}</td>
+            <td>₹${tx.amount}</td>
+            <td>${time}</td>
+            </tr>
+
+            `;
+
         });
 
     });
+
 }
 
 
 // ================= CLEAR HISTORY =================
 function clearHistory() {
 
-    if (!currentUser) return;
-
     fetch(`${API}/transactions/${currentUser.id}/clear`, {
+
         method: "DELETE"
+
     })
     .then(res => res.text())
     .then(msg => {
@@ -311,8 +444,8 @@ function clearHistory() {
 
         loadHistory();
 
-    })
-    .catch(err => console.error(err));
+    });
+
 }
 
 
@@ -323,9 +456,18 @@ function resetPassword() {
     let password = document.getElementById("newPass").value;
 
     fetch(API + "/resetPassword", {
+
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+
+        body: JSON.stringify({
+
+            username,
+            password
+
+        })
+
     })
     .then(res => res.text())
     .then(msg => {
@@ -335,27 +477,18 @@ function resetPassword() {
         backToLogin();
 
     });
+
 }
 
 
 // ================= LOGOUT =================
 function logout() {
 
-    if (!currentUser) return;
+    localStorage.removeItem("bankUser");
 
-    fetch(`${API}/logout?userId=${currentUser.id}`, {
-        method: "POST"
-    })
-    .then(res => res.text())
-    .then(msg => {
+    currentUser = null;
 
-        alert(msg);
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("loginCard").classList.remove("hidden");
 
-        currentUser = null;
-
-        document.getElementById("dashboard").classList.add("hidden");
-        document.getElementById("loginCard").classList.remove("hidden");
-
-    })
-    .catch(err => console.error(err));
 }
