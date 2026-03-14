@@ -1,5 +1,4 @@
 let currentUser = null;
-let otpMode = ""; // registerOTP or loginOTP
 
 const API = "http://localhost:9093/api/bank";
 
@@ -27,7 +26,6 @@ function backToLogin() {
 
     document.getElementById("registerCard").classList.add("hidden");
     document.getElementById("forgotCard").classList.add("hidden");
-    document.getElementById("otpCard").classList.add("hidden");
     document.getElementById("dashboard").classList.add("hidden");
 
     document.getElementById("loginCard").classList.remove("hidden");
@@ -86,23 +84,15 @@ function register() {
     .then(res => res.text())
     .then(msg => {
 
-        // duplicate check
         if(msg.includes("exists") || msg.includes("duplicate")){
 
             alert(msg);
             return;
         }
 
-        alert(msg);
+        alert("Registration successful. Please login.");
 
-        currentUser = { username, email, phone };
-
-        otpMode = "registerOTP";
-
-        sendOtp(phone);
-
-        document.getElementById("registerCard").classList.add("hidden");
-        document.getElementById("otpCard").classList.remove("hidden");
+        backToLogin();
 
     })
     .catch(err => {
@@ -160,12 +150,15 @@ function login() {
 
         };
 
-        otpMode = "loginOTP";
-
-        sendOtp(phone);
-
         document.getElementById("loginCard").classList.add("hidden");
-        document.getElementById("otpCard").classList.remove("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+
+        document.getElementById("userDisplay").innerText = currentUser.username;
+
+        localStorage.setItem("bankUser", JSON.stringify(currentUser));
+
+        loadBalance();
+        loadHistory();
 
     })
     .catch(err => {
@@ -174,78 +167,6 @@ function login() {
         alert("Invalid Username or Password");
 
     });
-
-}
-
-
-// ================= SEND OTP =================
-function sendOtp(phone) {
-
-    fetch(`${API}/sendOtp?phone=${phone}`, {
-
-        method: "POST"
-
-    })
-    .then(res => res.text())
-    .then(msg => alert(msg))
-    .catch(err => console.error(err));
-
-}
-
-
-// ================= VERIFY OTP =================
-function verifyOtp() {
-
-    let otp = document.getElementById("otpInput").value.trim();
-
-    if (!otp) {
-
-        alert("Enter OTP");
-        return;
-    }
-
-    fetch(`${API}/verifyOtp?phone=${currentUser.phone}&otp=${otp}`, {
-
-        method: "POST"
-
-    })
-    .then(res => res.text())
-    .then(msg => {
-
-        if(msg === "OTP Verified Successfully"){
-
-            // REGISTER OTP
-            if(otpMode === "registerOTP"){
-
-                alert("Registration completed. Please login.");
-
-                backToLogin();
-
-                return;
-            }
-
-            // LOGIN OTP
-            if(otpMode === "loginOTP"){
-
-                document.getElementById("otpCard").classList.add("hidden");
-                document.getElementById("dashboard").classList.remove("hidden");
-
-                document.getElementById("userDisplay").innerText = currentUser.username;
-
-                localStorage.setItem("bankUser", JSON.stringify(currentUser));
-
-                loadBalance();
-                loadHistory();
-            }
-
-        }
-        else{
-
-            alert("Wrong OTP");
-        }
-
-    })
-    .catch(err => console.error(err));
 
 }
 
